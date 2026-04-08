@@ -9,6 +9,7 @@ from typing import Optional, Tuple
 from openai import OpenAI
 
 from env.environment import ProductivityEnvironment
+from env.tasks import task_names
 
 
 MAX_STEPS = 5
@@ -103,80 +104,84 @@ def _query_model(client: OpenAI, model_name: str, observation_json: str) -> Tupl
 
 def main() -> None:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--task", default=os.getenv("TASK_NAME", "easy"))
+    parser.add_argument("--task", default=os.getenv("TASK_NAME", "all"))
     args = parser.parse_args()
 
-    env = ProductivityEnvironment(max_steps=MAX_STEPS)
-    task_name = args.task
-    model_name_for_log = MODEL_NAME
-    rewards: list[float] = []
-    success = False
-    steps_taken = 0
-    score = 0.0
-    last_error: Optional[str] = None
+    selected = args.task.strip().lower()
+    tasks_to_run = task_names() if selected in {"all", "*"} else [selected]
 
-    _print_start(task_name, env.benchmark_name, model_name_for_log)
+    client, model_name, init_error = _build_client()
 
-    done = False
-    try:
+    for task_name in tasks_to_run:
+        env = ProductivityEnvironment(max_steps=MAX_STEPS)
+        model_name_for_log = MODEL_NAME
+        rewards: list[float] = []
+        success = False
+        steps_taken = 0
+        score = 0.0
+        last_error: Optional[str] = None
+        done = False
+
+        _print_start(task_name, env.benchmark_name, model_name_for_log)
+
         try:
-            observation = env.reset(task_name=task_name)
-        except Exception as exc:
-            steps_taken = 1
-            rewards = [0.00]
-            last_error = f"reset_failed:{_compact(exc)}"
-            _print_step(1, "inspect", 0.00, True, last_error)
-            done = True
-            return
-
-        client, model_name, init_error = _build_client()
-        if init_error is not None or client is None or model_name is None:
-            steps_taken = 1
-            rewards = [0.00]
-            last_error = init_error
-            _print_step(1, "inspect", 0.00, True, last_error)
-            done = True
-            return
-
-        for step_number in range(1, MAX_STEPS + 1):
-            steps_taken = step_number
-            action, model_error = _query_model(
-                client,
-                model_name,
-                json.dumps(observation.model_dump(), separators=(",", ":"), sort_keys=True),
-            )
-
-            if model_error is not None or action is None:
-                rewards.append(0.00)
-                _print_step(step_number, "inspect", 0.00, True, model_error)
-                done = True
-                last_error = model_error
-                break
-
             try:
-                observation, reward, done, info = env.step(action)
-                error = info.get("error")
-                rewards.append(reward.value)
-                _print_step(step_number, action, reward.value, done, error)
-                last_error = error
+                observation = env.reset(task_name=task_name)
             except Exception as exc:
-                rewards.append(0.00)
-                _print_step(step_number, action, 0.00, True, f"step_failed:{_compact(exc)}")
+                steps_taken = 1
+                rewards = [0.00]
+                last_error = f"reset_failed:{_compact(exc)}"
+                _print_step(1, "inspect", 0.00, True, last_error)
                 done = True
-                last_error = str(exc)
-                break
+                continue
 
-            if done:
-                break
+            if init_error is not None or client is None or model_name is None:
+                steps_taken = 1
+                rewards = [0.00]
+                last_error = init_error
+                _print_step(1, "inspect", 0.00, True, last_error)
+                done = True
+                continue
 
-        score = max(0.0, min(1.0, float(env.state().best_score)))
-        success = bool(done and score >= 1.0 and (last_error is None or last_error == ""))
-    finally:
-        try:
-            env.close()
-        except Exception:
-            pass
-        _print_end(success, max(steps_taken, 1), score, rewards if rewards else [0.00])
+            for step_number in range(1, MAX_STEPS + 1):
+                steps_taken = step_number
+                action, model_error = _query_model(
+                    client,
+                    model_name,
+                    json.dumps(observation.model_dump(), separators=(",", ":"), sort_keys=True),
+                )
+
+                if model_error is not None or action is None:
+                    rewards.append(0.00)
+                    _print_step(step_number, "inspect", 0.00, True, model_error)
+                    done = True
+                    last_error = model_error
+                    break
+
+                try:
+                    observation, reward, done, info = env.step(action)
+                    error = info.get("error")
+                    rewards.append(reward.value)
+                    _print_step(step_number, action, reward.value, done, error)
+                    last_error = error
+                except Exception as exc:
+                    rewards.append(0.00)
+                    _print_step(step_number, action, 0.00, True, f"step_failed:{_compact(exc)}")
+                    done = True
+                    last_error = str(exc)
+                    break
+
+                if done:
+                    break
+
+            score = max(0.0, min(1.0, float(env.state().best_score)))
+            success = bool(done and score >= 1.0 and (last_error is None or last_error == ""))
+        finally:
+            try:
+                env.close()
+            except Exception:
+                pass
+            _print_end(success, max(steps_taken, 1), score, rewards if rewards else [0.00])
 
 
 if __name__ == "__main__":
