@@ -1,0 +1,10 @@
+name: openenv-productivity
+version: "1.0.0"
+description: Deterministic productivity benchmark with three tasks for the OpenEnv RL Challenge.
+entrypoint: env.environment:ProductivityEnvironment
+inference: python inference.py
+max_steps: 5
+tasks:
+  - easy
+  - medium
+  - hard
