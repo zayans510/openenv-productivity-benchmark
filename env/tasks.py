@@ -372,13 +372,9 @@ def schema_json(task_name: str) -> str:
     return json.dumps(get_task(task_name).public_schema(), sort_keys=True)
 
 
-def _strict_open_interval(score: float, eps: float = 1e-3) -> float:
-    """Map score into (0, 1) for external validators requiring strict bounds."""
-    if score <= 0.0:
-        return eps
-    if score >= 1.0:
-        return 1.0 - eps
-    return score
+def _strict_open_interval(score: float) -> float:
+    """Map score into strict (0, 1) with stable rounded output."""
+    return round(min(max(float(score), 0.01), 0.99), 3)
 
 
 def easy_grader(candidate: Dict[str, Any]) -> float:
