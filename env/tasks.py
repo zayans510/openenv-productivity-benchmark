@@ -372,19 +372,28 @@ def schema_json(task_name: str) -> str:
     return json.dumps(get_task(task_name).public_schema(), sort_keys=True)
 
 
+def _strict_open_interval(score: float, eps: float = 1e-3) -> float:
+    """Map score into (0, 1) for external validators requiring strict bounds."""
+    if score <= 0.0:
+        return eps
+    if score >= 1.0:
+        return 1.0 - eps
+    return score
+
+
 def easy_grader(candidate: Dict[str, Any]) -> float:
     score, _ = get_task("easy").grade_submission(candidate)
-    return score
+    return _strict_open_interval(score)
 
 
 def medium_grader(candidate: Dict[str, Any]) -> float:
     score, _ = get_task("medium").grade_submission(candidate)
-    return score
+    return _strict_open_interval(score)
 
 
 def hard_grader(candidate: Dict[str, Any]) -> float:
     score, _ = get_task("hard").grade_submission(candidate)
-    return score
+    return _strict_open_interval(score)
 
 
 # Canonical checker-friendly task list with explicit grader functions.
