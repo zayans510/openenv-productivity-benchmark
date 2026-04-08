@@ -14,6 +14,7 @@ from env.environment import ProductivityEnvironment
 MAX_STEPS = 5
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "zai-org/GLM-5.1")
+API_KEY = os.getenv("API_KEY")
 HF_TOKEN = os.getenv("HF_TOKEN")
 LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
@@ -46,11 +47,12 @@ def _print_end(success: bool, steps: int, score: float, rewards: list[float]) ->
 
 
 def _build_client() -> Tuple[Optional[OpenAI], Optional[str], Optional[str]]:
-    if not HF_TOKEN:
-        return None, MODEL_NAME, "missing HF_TOKEN"
+    token = API_KEY or HF_TOKEN
+    if not token:
+        return None, MODEL_NAME, "missing API_KEY"
 
     try:
-        client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
+        client = OpenAI(base_url=API_BASE_URL, api_key=token)
     except Exception as exc:
         return None, MODEL_NAME, f"client_initialization_failed:{_compact(exc)}"
     return client, MODEL_NAME, None

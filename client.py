@@ -18,14 +18,14 @@ class ProductivityClient:
     def __init__(self) -> None:
         api_base_url = os.getenv("API_BASE_URL")
         model_name = os.getenv("MODEL_NAME")
-        token = os.getenv("HF_TOKEN")
+        token = os.getenv("API_KEY") or os.getenv("HF_TOKEN")
 
         if not api_base_url:
             raise ValueError("missing API_BASE_URL")
         if not model_name:
             raise ValueError("missing MODEL_NAME")
         if not token:
-            raise ValueError("missing HF_TOKEN")
+            raise ValueError("missing API_KEY")
 
         self.model_name = model_name
         self.client = OpenAI(base_url=api_base_url, api_key=token)
