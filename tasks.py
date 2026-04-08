@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict
 
-from env.tasks import GRADERS, TASKS as TASK_SPECS, TaskSpec, get_task, schema_json, task_names
+from env.tasks import GRADERS, TASK_SPECS, TaskSpec, get_task, schema_json, task_names
 
 
 def easy_grader(candidate: Dict[str, Any]) -> float:
@@ -29,7 +29,6 @@ TASKS_WITH_GRADERS = TASKS
 
 
 __all__ = [
-    "TASKS",
     "TaskSpec",
     "get_task",
     "schema_json",

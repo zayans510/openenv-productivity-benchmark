@@ -219,7 +219,7 @@ class TaskSpec:
         return copy.deepcopy(self.schema)
 
 
-TASKS: Dict[str, TaskSpec] = {
+TASK_SPECS: Dict[str, TaskSpec] = {
     "easy": TaskSpec(
         name="easy",
         difficulty="easy",
@@ -358,10 +358,10 @@ TASKS: Dict[str, TaskSpec] = {
 
 def get_task(task_name: str) -> TaskSpec:
     normalized = _normalize_text(task_name)
-    if normalized not in TASKS:
-        valid = ", ".join(sorted(TASKS.keys()))
+    if normalized not in TASK_SPECS:
+        valid = ", ".join(sorted(TASK_SPECS.keys()))
         raise ValueError(f"unknown task '{task_name}'. expected one of: {valid}")
-    return TASKS[normalized]
+    return TASK_SPECS[normalized]
 
 
 def task_names() -> List[str]:
@@ -386,6 +386,31 @@ def hard_grader(candidate: Dict[str, Any]) -> float:
     score, _ = get_task("hard").grade_submission(candidate)
     return score
 
+
+# Canonical checker-friendly task list with explicit grader functions.
+TASKS = [
+    {
+        "name": "easy",
+        "difficulty": "easy",
+        "grader": easy_grader,
+        "spec": TASK_SPECS["easy"],
+    },
+    {
+        "name": "medium",
+        "difficulty": "medium",
+        "grader": medium_grader,
+        "spec": TASK_SPECS["medium"],
+    },
+    {
+        "name": "hard",
+        "difficulty": "hard",
+        "grader": hard_grader,
+        "spec": TASK_SPECS["hard"],
+    },
+]
+
+# Compatibility alias for validators that look for this exact name.
+TASKS_WITH_GRADERS = TASKS
 
 GRADERS = {
     "easy": easy_grader,
