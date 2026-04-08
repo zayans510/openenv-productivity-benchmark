@@ -263,3 +263,7 @@ class ProductivityEnvironment:
     def _maybe_finish(self) -> None:
         if self._step_count >= self.max_steps:
             self._done = True
+
+    def close(self) -> None:
+        """No-op close method for API parity with async/containerized envs."""
+        return None
