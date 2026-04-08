@@ -15,7 +15,7 @@ MAX_STEPS = 5
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "zai-org/GLM-5.1")
 HF_TOKEN = os.getenv("HF_TOKEN")
-LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME", "openenv-productivity")
+LOCAL_IMAGE_NAME = os.getenv("LOCAL_IMAGE_NAME")
 
 
 def _compact(text: Optional[str]) -> str:
