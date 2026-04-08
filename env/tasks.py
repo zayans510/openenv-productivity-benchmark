@@ -370,3 +370,25 @@ def task_names() -> List[str]:
 
 def schema_json(task_name: str) -> str:
     return json.dumps(get_task(task_name).public_schema(), sort_keys=True)
+
+
+def easy_grader(candidate: Dict[str, Any]) -> float:
+    score, _ = get_task("easy").grade_submission(candidate)
+    return score
+
+
+def medium_grader(candidate: Dict[str, Any]) -> float:
+    score, _ = get_task("medium").grade_submission(candidate)
+    return score
+
+
+def hard_grader(candidate: Dict[str, Any]) -> float:
+    score, _ = get_task("hard").grade_submission(candidate)
+    return score
+
+
+GRADERS = {
+    "easy": easy_grader,
+    "medium": medium_grader,
+    "hard": hard_grader,
+}
