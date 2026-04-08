@@ -13,6 +13,7 @@ from env.tasks import task_names
 
 
 MAX_STEPS = 5
+SUCCESS_SCORE_THRESHOLD = 0.50
 API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
 MODEL_NAME = os.getenv("MODEL_NAME", "zai-org/GLM-5.1")
 API_KEY = os.getenv("API_KEY")
@@ -45,6 +46,10 @@ def _print_step(step: int, action: str, reward: float, done: bool, error: Option
 def _print_end(success: bool, steps: int, score: float, rewards: list[float]) -> None:
     reward_text = ",".join(f"{value:.2f}" for value in rewards)
     print(f"[END] success={_bool_text(success)} steps={steps} score={score:.3f} rewards={reward_text}")
+
+
+def _strict_open_interval(score: float) -> float:
+    return round(min(max(float(score), 0.01), 0.99), 3)
 
 
 def _build_client() -> Tuple[Optional[OpenAI], Optional[str], Optional[str]]:
@@ -174,13 +179,14 @@ def main() -> None:
                 if done:
                     break
 
-            score = max(0.0, min(1.0, float(env.state().best_score)))
-            success = bool(done and score >= 1.0 and (last_error is None or last_error == ""))
+            score = _strict_open_interval(env.state().best_score)
+            success = bool(done and score >= SUCCESS_SCORE_THRESHOLD and (last_error is None or last_error == ""))
         finally:
             try:
                 env.close()
             except Exception:
                 pass
+            score = _strict_open_interval(score)
             _print_end(success, max(steps_taken, 1), score, rewards if rewards else [0.00])
 
 
